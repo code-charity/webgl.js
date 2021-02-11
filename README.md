@@ -1,2 +1,2 @@
 # webgl
-WebGL rendering lbrary.
+WebGL rendering library.
