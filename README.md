@@ -9,4 +9,6 @@ var plane = WEBGL.createElement('plane', {
 	height: 100,
     backgroundColor: 0xFF0000
 });
+
+plane.left = 100;
 ```
