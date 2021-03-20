@@ -10,5 +10,5 @@ var plane = WEBGL.createElement('plane', {
 	backgroundColor: 0xFF0000
 });
 
-plane.left = 100;
+plane.style.left = 100;
 ```
