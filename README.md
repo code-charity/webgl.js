@@ -7,7 +7,7 @@ var plane = WEBGL.createElement('plane', {
 	top: 0,
 	width: 100,
 	height: 100,
-    backgroundColor: 0xFF0000
+	backgroundColor: 0xFF0000
 });
 
 plane.left = 100;
