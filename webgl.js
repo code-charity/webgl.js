@@ -45,8 +45,8 @@ WEBGL.color = function(value) {
 --------------------------------------------------------------*/
 
 WEBGL.resize = function() {
-    var cvs = this.canvas,
-        ctx = this.context;
+    var cvs = WEBGL.canvas,
+        ctx = WEBGL.context;
 
     cvs.width = cvs.offsetWidth;
     cvs.height = cvs.offsetHeight;
@@ -76,6 +76,9 @@ WEBGL.setCanvas = function(element) {
 
     this.resize();
 
+    window.removeEventListener('resize', WEBGL.resize);
+    window.addEventListener('resize', WEBGL.resize);
+
     var ctx = this.context;
 
     ctx.clearColor(0, 0, 0, 0);
@@ -84,6 +87,8 @@ WEBGL.setCanvas = function(element) {
     ctx.enable(ctx.DEPTH_TEST);
     ctx.depthFunc(ctx.LEQUAL);
     ctx.blendFunc(ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA);
+
+    this.render();
 };
 
 
@@ -191,6 +196,12 @@ WEBGL.createElement = function(name, styles) {
                 get backgroundColor() {
                     return this.cache.backgroundColor;
                 }
+            },
+            remove: function() {
+                WEBGL.context.deleteBuffer(this.positionBuffer);
+                WEBGL.context.deleteProgram(this.program);
+
+                WEBGL.children.splice(this.id, 1);
             }
         };
 
@@ -249,6 +260,9 @@ WEBGL.createElement = function(name, styles) {
 
     this.children.push(element);
 
+    ctx.useProgram(element.program);
+    ctx.uniform2f(element.uniforms.u_resolution, this.canvas.width, this.canvas.height);
+
     return element;
 };
 
@@ -258,12 +272,12 @@ WEBGL.createElement = function(name, styles) {
 --------------------------------------------------------------*/
 
 WEBGL.render = function() {
-    var ctx = this.context;
+    var ctx = WEBGL.context;
 
     ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
 
-    for (var i = 0, l = this.children.length; i < l; i++) {
-        var child = this.children[i],
+    for (var i = 0, l = WEBGL.children.length; i < l; i++) {
+        var child = WEBGL.children[i],
             x1 = 0,
             x2 = child.style.cache.width,
             y1 = 0,
@@ -272,7 +286,6 @@ WEBGL.render = function() {
 
         ctx.useProgram(child.program);
 
-        ctx.uniform2f(child.uniforms.u_resolution, this.canvas.width, this.canvas.height);
         ctx.uniform2fv(child.uniforms.u_translation, [child.style.cache.left, child.style.cache.top]);
         ctx.uniform2fv(child.uniforms.u_rotation, [Math.sin(radians), Math.cos(radians)]);
         ctx.uniform2fv(child.uniforms.u_scale, child.style.cache.scale);
@@ -294,4 +307,6 @@ WEBGL.render = function() {
 
         ctx.drawArrays(ctx.TRIANGLES, 0, 6);
     }
+
+    requestAnimationFrame(WEBGL.render);
 };
