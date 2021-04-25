@@ -1,6 +1,7 @@
 # webgl.js
 Manipulate WebGL in the same way as the DOM.
 
+
 ### Usage
 
 ```html
@@ -21,3 +22,12 @@ Manipulate WebGL in the same way as the DOM.
     </body>
 </html>
 ```
+
+
+### Styles
+
+- [x] left
+- [x] top
+- [x] width
+- [x] height
+- [x] background-color
