@@ -31,3 +31,6 @@ Manipulate WebGL in the same way as the DOM.
 - [x] width
 - [x] height
 - [x] background-color
+- [x] background-image
+- [x] scale
+- [x] rotation
