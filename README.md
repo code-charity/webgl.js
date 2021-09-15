@@ -24,7 +24,7 @@ Manipulate WebGL in the same way as the DOM.
 ```
 
 
-### Styles
+### Supported styles
 
 - [x] left
 - [x] top

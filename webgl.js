@@ -7,6 +7,7 @@
 # Set target
 # Buffer
 # Shader
+# Styles
 # Create plane
 # Render
 --------------------------------------------------------------*/
@@ -26,7 +27,7 @@ var WEBGL = {
 # COLOR
 --------------------------------------------------------------*/
 
-WEBGL.color = function(value) {
+WEBGL.color = function (value) {
     if (typeof value === 'number') {
         return [
             (value >> 16 & 255) / 255,
@@ -44,7 +45,7 @@ WEBGL.color = function(value) {
 # RESIZE
 --------------------------------------------------------------*/
 
-WEBGL.resize = function() {
+WEBGL.resize = function () {
     var cvs = WEBGL.canvas,
         ctx = WEBGL.context;
 
@@ -59,7 +60,7 @@ WEBGL.resize = function() {
 # SET TARGET
 --------------------------------------------------------------*/
 
-WEBGL.setCanvas = function(element) {
+WEBGL.setCanvas = function (element) {
     this.canvas = element;
 
     this.context = this.canvas.getContext('webgl', {
@@ -96,7 +97,7 @@ WEBGL.setCanvas = function(element) {
 # BUFFER
 --------------------------------------------------------------*/
 
-WEBGL.createBuffer = function(array) {
+WEBGL.createBuffer = function (array) {
     var ctx = this.context,
         buffer = ctx.createBuffer();
 
@@ -109,7 +110,7 @@ WEBGL.createBuffer = function(array) {
 # SHADER
 --------------------------------------------------------------*/
 
-WEBGL.createShader = function(type, source) {
+WEBGL.createShader = function (type, source) {
     var ctx = this.context,
         shader = ctx.createShader(type);
 
@@ -119,7 +120,7 @@ WEBGL.createShader = function(type, source) {
     return shader;
 };
 
-WEBGL.createProgram = function(vertex_shader_source, fragment_shader_source) {
+WEBGL.createProgram = function (vertex_shader_source, fragment_shader_source) {
     var ctx = this.context,
         program = ctx.createProgram(),
         vertex_shader = this.createShader(ctx.VERTEX_SHADER, vertex_shader_source),
@@ -135,10 +136,124 @@ WEBGL.createProgram = function(vertex_shader_source, fragment_shader_source) {
 
 
 /*--------------------------------------------------------------
+# STYLES
+--------------------------------------------------------------*/
+
+WEBGL.createStyle = function (target) {
+    var child = target,
+        style = {
+            left: 0,
+            top: 0,
+            width: 1,
+            height: 1,
+            backgroundColor: 0x000000,
+            backgroundImage: null,
+            rotation: 0,
+            scale: [1, 1]
+        };
+
+    return {
+        set left(value) {
+            style.left = value;
+        },
+        get left() {
+            return style.left;
+        },
+        set top(value) {
+            style.top = value;
+        },
+        get top() {
+            return style.top;
+        },
+        set width(value) {
+            style.width = value;
+        },
+        get width() {
+            return style.width;
+        },
+        set height(value) {
+            style.height = value;
+        },
+        get height() {
+            return style.height;
+        },
+        set backgroundColor(value) {
+            style.backgroundColor = value;
+        },
+        get backgroundColor() {
+            return style.backgroundColor;
+        },
+        set backgroundImage(value) {
+            style.backgroundImage = value;
+
+            if (value !== null) {
+                var ctx = WEBGL.context,
+                    image = new Image();
+
+                child.textureBuffer = ctx.createBuffer();
+                child.texture = ctx.createTexture();
+
+                ctx.bindBuffer(ctx.ARRAY_BUFFER, child.textureBuffer);
+
+                ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([
+                    0, 0,
+                    1, 0,
+                    0, 1,
+                    0, 1,
+                    1, 0,
+                    1, 1
+                ]), ctx.STATIC_DRAW);
+
+                child.uniforms.a_texcoord = ctx.getAttribLocation(child.program, 'a_texcoord');
+                child.uniforms.u_texture = ctx.getUniformLocation(child.program, 'u_texture');
+
+                ctx.bindTexture(ctx.TEXTURE_2D, child.texture);
+                ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
+
+                image.src = value;
+                image.addEventListener('load', function () {
+                    ctx.bindTexture(ctx.TEXTURE_2D, child.texture);
+                    ctx.texImage2D(
+                        ctx.TEXTURE_2D,
+                        0,
+                        ctx.RGBA,
+                        ctx.RGBA,
+                        ctx.UNSIGNED_BYTE,
+                        image
+                    );
+                    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
+                    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+                    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
+                    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
+                });
+            }
+
+            updateProgram(child);
+        },
+        get backgroundImage() {
+            return style.backgroundImage;
+        },
+        set scale(value) {
+            style.scale = value;
+        },
+        get scale() {
+            return style.scale;
+        },
+        set rotation(value) {
+            style.rotation = value;
+        },
+        get rotation() {
+            return style.rotation;
+        }
+    };
+};
+
+
+/*--------------------------------------------------------------
 # CREATE PLANE
 --------------------------------------------------------------*/
 
-WEBGL.createElement = function(name, styles) {
+WEBGL.createElement = function (name, styles) {
     if (!this.canvas) {
         var cvs = document.querySelector('canvas');
 
@@ -214,100 +329,7 @@ WEBGL.createElement = function(name, styles) {
             textureBuffer: ctx.createBuffer(),
             texture: null,
             program: null,
-            style: {
-                cache: {
-                    left: 0,
-                    top: 0,
-                    width: 1,
-                    height: 1,
-                    backgroundColor: 0x000000,
-                    backgroundImage: null,
-                    rotation: 0,
-                    scale: [1, 1]
-                },
-                set left(value) {
-                    this.cache.left = value;
-                },
-                get left() {
-                    return this.cache.left;
-                },
-                set top(value) {
-                    this.cache.top = value;
-                },
-                get top() {
-                    return this.cache.top;
-                },
-                set width(value) {
-                    this.cache.width = value;
-                },
-                get width() {
-                    return this.cache.width;
-                },
-                set height(value) {
-                    this.cache.height = value;
-                },
-                get height() {
-                    return this.cache.height;
-                },
-                set backgroundColor(value) {
-                    this.cache.backgroundColor = value;
-                },
-                get backgroundColor() {
-                    return this.cache.backgroundColor;
-                },
-                set backgroundImage(value) {
-                    this.cache.backgroundImage = value;
-
-                    if (value !== null) {
-                        var self = this,
-                            ctx = WEBGL.context,
-                            image = new Image();
-
-                        this.parent.textureBuffer = ctx.createBuffer();
-                        this.parent.texture = ctx.createTexture();
-
-                        ctx.bindBuffer(ctx.ARRAY_BUFFER, this.parent.textureBuffer);
-
-                        ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([
-                            0, 0,
-                            1, 0,
-                            0, 1,
-                            0, 1,
-                            1, 0,
-                            1, 1
-                        ]), ctx.STATIC_DRAW);
-
-                        this.parent.uniforms.a_texcoord = ctx.getAttribLocation(this.parent.program, 'a_texcoord');
-                        this.parent.uniforms.u_texture = ctx.getUniformLocation(this.parent.program, 'u_texture');
-
-                        ctx.bindTexture(ctx.TEXTURE_2D, this.parent.texture);
-                        ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, 1, 1, 0, ctx.RGBA, ctx.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
-
-                        image.src = value;
-                        image.addEventListener('load', function() {
-                            ctx.bindTexture(ctx.TEXTURE_2D, self.parent.texture);
-                            ctx.texImage2D(
-                                ctx.TEXTURE_2D,
-                                0,
-                                ctx.RGBA,
-                                ctx.RGBA,
-                                ctx.UNSIGNED_BYTE,
-                                image
-                            );
-                            ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
-                            ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-                            ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
-                            ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
-                        });
-                    }
-
-                    updateProgram(this.parent);
-                },
-                get backgroundImage() {
-                    return this.cache.backgroundImage;
-                }
-            },
-            remove: function() {
+            remove: function () {
                 WEBGL.context.deleteBuffer(this.positionBuffer);
                 WEBGL.context.deleteProgram(this.program);
 
@@ -315,7 +337,7 @@ WEBGL.createElement = function(name, styles) {
             }
         };
 
-    element.style.parent = element;
+    element.style = new WEBGL.createStyle(element);
 
     updateProgram(element);
 
@@ -330,19 +352,6 @@ WEBGL.createElement = function(name, styles) {
         u_texture: ctx.getUniformLocation(element.program, 'u_texture')
     };
 
-    for (var key in styles) {
-        if (
-            key === 'left' ||
-            key === 'top' ||
-            key === 'width' ||
-            key === 'height' ||
-            key === 'backgroundColor' ||
-            key === 'backgroundImage'
-        ) {
-            element.style.cache[key] = styles[key];
-        }
-    }
-
     this.children.push(element);
 
     ctx.uniform2f(element.uniforms.u_resolution, this.canvas.width, this.canvas.height);
@@ -355,7 +364,7 @@ WEBGL.createElement = function(name, styles) {
 # RENDER
 --------------------------------------------------------------*/
 
-WEBGL.render = function() {
+WEBGL.render = function () {
     var cvs = WEBGL.canvas,
         ctx = WEBGL.context;
 
@@ -364,18 +373,18 @@ WEBGL.render = function() {
     for (var i = 0, l = WEBGL.children.length; i < l; i++) {
         var child = WEBGL.children[i],
             x1 = 0,
-            x2 = child.style.cache.width,
+            x2 = child.style.width,
             y1 = 0,
-            y2 = child.style.cache.height,
-            radians = child.style.cache.rotation * Math.PI / 180;
+            y2 = child.style.height,
+            radians = child.style.rotation * Math.PI / 180;
 
         ctx.useProgram(child.program);
 
         ctx.uniform2f(child.uniforms.u_resolution, cvs.width, cvs.height);
 
-        ctx.uniform2fv(child.uniforms.u_translation, [child.style.cache.left, child.style.cache.top]);
+        ctx.uniform2fv(child.uniforms.u_translation, [child.style.left, child.style.top]);
         ctx.uniform2fv(child.uniforms.u_rotation, [Math.sin(radians), Math.cos(radians)]);
-        ctx.uniform2fv(child.uniforms.u_scale, child.style.cache.scale);
+        ctx.uniform2fv(child.uniforms.u_scale, child.style.scale);
 
         ctx.bindBuffer(ctx.ARRAY_BUFFER, child.positionBuffer);
         ctx.enableVertexAttribArray(child.uniforms.a_position);
@@ -397,7 +406,7 @@ WEBGL.render = function() {
             ctx.vertexAttribPointer(child.uniforms.a_texcoord, 2, ctx.FLOAT, false, 0, 0);
             ctx.uniform1i(child.uniforms.u_texture, 0);
         } else {
-            ctx.uniform4fv(child.uniforms.u_background_color, WEBGL.color(child.style.cache.backgroundColor));
+            ctx.uniform4fv(child.uniforms.u_background_color, WEBGL.color(child.style.backgroundColor));
         }
 
         ctx.drawArrays(ctx.TRIANGLES, 0, 6);
